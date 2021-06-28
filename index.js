@@ -6,8 +6,9 @@ const generateNewCard = (taskData) => `
 <div class="col-md-6 col-lg-4">
             <div class="card">
               <div class="card-header d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-outline-success"><i class="fas fa-pencil-alt"></i></button>
-                <button type="button" class="btn btn-outline-danger" id=${taskData.id} onclicl="deleteCard.apply(this, arguments)">
+                <button type="button" id=${taskData.id} class="btn btn-outline-success" onclick="editCard.apply(this, arguments)">
+                <i class="fas fa-pencil-alt" id=${taskData.id} onclick="editCard.apply(this, arguments)"></i></button>
+                <button type="button" class="btn btn-outline-danger" id=${taskData.id} onclick="deleteCard.apply(this, arguments)">
                 <i class="fas fa-trash-alt" id=${taskData.id} onclick="deleteCard.apply(this, arguments)"></i></button>
               </div>
               <img src=${taskData.imageUrl} 
@@ -18,7 +19,7 @@ const generateNewCard = (taskData) => `
                 <a href="#" class="btn btn-primary">${taskData.taskType}</a>
               </div>
               <div class="card-footer">
-                <button type="button" class="btn btn-outline-primary float-end">
+                <button type="button" id=${taskData.id} class="btn btn-outline-primary float-end">
                   Open Task
                 </button>
               </div>
@@ -43,6 +44,9 @@ const loadInitialCardData = () => {
 
 };
 
+const updateLocalStorage = () =>
+    localStorage.setItem("tasky", JSON.stringify({cards:globalStore}));
+
 const saveChanges = () => {
  const taskData = {
      id: `${Date.now()}` , // unique number for id
@@ -51,18 +55,17 @@ const saveChanges = () => {
      taskType:  document.getElementById("tasktype").value,
      taskDescription: document.getElementById("taskdescription").value,
     };
-
     taskContainer.insertAdjacentHTML("beforeend", generateNewCard(taskData));
 
     globalStore.push(taskData);
 
     localStorage.setItem("tasky", JSON.stringify({cards:globalStore}));
+
 };
 
 const deleteCard = (event) => {
   event = window.event;
-  // id
-  const targetId = event.target.id;
+  const targetId = event.target.id;   //id
   const tagname = event.target.tagName; //BUTTON
 
   // match the id of the element with the id inside the globalStore
@@ -82,4 +85,68 @@ const deleteCard = (event) => {
   
 
 
+};
+
+const editCard = (event) => {
+  event = window.event;
+  const targetId = event.target.id;
+  const tagname = event.target.tagName; //BUTTON
+
+  let parentElement;
+
+  if (tagname === "BUTTON"){
+    parentElement = event.target.parentNode.parentNode;
+  }else{
+    parentElement = event.target.parentNode.parentNode.parentNode;
+  }
+  
+  let taskTitle = parentElement.childNodes[5].childNodes[1];
+  let taskDescription = parentElement.childNodes[5].childNodes[3];
+  let taskType = parentElement.childNodes[5].childNodes[5];
+  let submitButton = parentElement.childNodes[7].childNodes[1];
+
+  taskTitle.setAttribute("contenteditable", "true");
+  taskDescription.setAttribute("contenteditable", "true");
+  taskType.setAttribute("contenteditable", "true");
+  submitButton.setAttribute("onclick","saveEdithanges.apply(this,arguments)");
+  submitButton.innerHTML = "Save Changes"
+};
+
+const saveEdithanges = (event) => {
+  event = window.event;
+  const targetId = event.target.id;
+  const tagname = event.target.tagName; //BUTTON
+
+  let parentElement;
+
+  if (tagname === "BUTTON"){
+    parentElement = event.target.parentNode.parentNode;
+  }else{
+    parentElement = event.target.parentNode.parentNode.parentNode;
+  }
+    
+  let taskTitle = parentElement.childNodes[5].childNodes[1];
+  let taskDescription = parentElement.childNodes[5].childNodes[3];
+  let taskType = parentElement.childNodes[5].childNodes[5];
+  let submitButton = parentElement.childNodes[7].childNodes[1];
+
+  const updatedData = {
+    taskTitle: taskTitle.innerHTML,
+    taskDescription: taskDescription.innerHTML,
+    taskType: taskType.innerHTML,
+  };
+  
+  globalStore = globalStore.map((task) => {
+    if (task.id === targetId) {
+      return {
+        id: task.id,
+        imageUrl: task.imageUrl,
+        taskTitle: updatedData.taskTitle,
+        taskType:  updatedData.taskType,
+        taskDescription: updatedData.taskDescription,
+      };
+    }
+    return task;
+  });
+  updateLocalStorage();  
 };
